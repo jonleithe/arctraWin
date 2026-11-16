@@ -465,3 +465,7 @@ Implemented one Arctra-compatible [observatory] INI per station in LocalAppData/
 Horizontal plane stays at zero degrees. A separate translucent ENU cone displays the minimum elevation and extends beyond selected geometry. C++ live frames now identify the observer/minimum and supply inclusive aboveThreshold alongside unchanged aboveHorizon. Host and renderer discard prior-station frames. Green current markers meet the limit; others are muted. Station switches retain the camera.
 
 Validation: native Debug build has zero warnings/errors; pure C# profile/migration checks pass; CTest passes including equality boundary; real CPF integration passes observer and threshold changes; eleven Playwright tests pass. Native smoke verified 6/6 live CPF targets and advancing UTC after profile migration. See docs/observer-plane.md for format and workflow.
+
+## Satellite marker styling (2026-11-16)
+
+Globe markers now use a locally drawn two-panel satellite billboard and a world-space motion arrow. Live direction comes from consecutive backend-supplied ECEF positions within 3.5 seconds, never the approximate reference orbit. Recorded preview arrows use consecutive supplied CPF samples. Icons retain threshold colours and fixed pixel size; arrow length follows camera distance for readability and is not a speed scale. No physical spacecraft attitude is implied. Labels moved outward. Added a movement/reversal/stationary direction test.

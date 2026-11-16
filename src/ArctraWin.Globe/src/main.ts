@@ -7,6 +7,7 @@ import {
 } from 'cesium';
 import { validateSnapshot } from './snapshot';
 import { ObserverLayer } from './observer';
+import { SatelliteMarkers } from './satellite-marker';
 import { validateLiveFrame, maximumLiveAgeMs } from './live';
 import 'cesium/Build/Cesium/Widgets/widgets.css';
 import './style.css';
@@ -70,6 +71,7 @@ async function start() {
   viewer.scene.renderError.addEventListener((_scene, error) => fail(error));
 
   const observerLayer = new ObserverLayer(viewer);
+  const satelliteMarkers = new SatelliteMarkers(viewer);
   const grid = viewer.entities.add({ name: 'Latitude / longitude grid', show: false });
   for (let longitude = -180; longitude < 180; longitude += 30) {
     const points: number[] = [];
@@ -137,6 +139,7 @@ async function start() {
     }
   }, 500);
   function clearTrajectory() {
+    satelliteMarkers.clear();
     for (const entity of viewer.entities.values.filter(entity => entity.parent && trajectoryRoots.includes(entity.parent))) viewer.entities.remove(entity);
     for (const root of trajectoryRoots) viewer.entities.remove(root);
     trajectoryRoots = [];
@@ -195,12 +198,13 @@ async function start() {
       if (loop) referenceLines.push(viewer.entities.add({ parent: trajectoryRoot, show: showReference, polyline: {
         positions: loop, width: 2.2, arcType: ArcType.NONE, clampToGround: false, material: color,
       } }));
-      viewer.entities.add({ id: `marker-${snapshot.target.key}`, parent: trajectoryRoot, position: positions[0],
+      const marker = viewer.entities.add({ id: `marker-${snapshot.target.key}`, parent: trajectoryRoot, position: positions[0],
         point: { pixelSize: 8, color, outlineColor: Color.fromCssColorString('#080F1B'), outlineWidth: 2 },
         label: { text: snapshot.target.name, font: '13px sans-serif', fillColor: color,
           style: LabelStyle.FILL_AND_OUTLINE, outlineColor: Color.fromCssColorString('#080F1B'), outlineWidth: 3,
-          horizontalOrigin: HorizontalOrigin.LEFT, pixelOffset: new Cartesian2(14, -14) },
+          horizontalOrigin: HorizontalOrigin.LEFT, pixelOffset: new Cartesian2(24, -20) },
       });
+      satelliteMarkers.update(snapshot.target.key, marker, positions[0], Date.parse(snapshot.epochUtc), color, positions[1]);
       endMarkers.push(viewer.entities.add({ parent: trajectoryRoot, show: showTrajectory, position: positions.at(-1)!,
         point: { pixelSize: 5, color: Color.fromCssColorString('#9BB1CA'), outlineColor: Color.fromCssColorString('#080F1B'), outlineWidth: 1 },
       }));
@@ -262,11 +266,12 @@ async function start() {
         if (!marker) marker = viewer.entities.add({ id: `marker-${target.key}`, parent: root,
           point: { pixelSize: 8, color, outlineColor: Color.BLACK, outlineWidth: 2 },
           label: { text: target.name, font: '13px sans-serif', fillColor: color, style: LabelStyle.FILL_AND_OUTLINE,
-            outlineColor: Color.fromCssColorString('#080F1B'), outlineWidth: 3, horizontalOrigin: HorizontalOrigin.LEFT, pixelOffset: new Cartesian2(14, -14) },
+            outlineColor: Color.fromCssColorString('#080F1B'), outlineWidth: 3, horizontalOrigin: HorizontalOrigin.LEFT, pixelOffset: new Cartesian2(24, -20) },
         });
         marker.position = new ConstantPositionProperty(new Cartesian3(...target.positionEcefM!));
         if (marker.label) marker.label.text = new ConstantProperty(`${target.name} · ${target.look!.elevationDeg.toFixed(1)}°`);
-        if (marker.point) marker.point.color = new ConstantProperty(target.look!.aboveThreshold ? Color.fromCssColorString('#88E5A5') : Color.fromCssColorString('#8490A2'));
+        satelliteMarkers.update(target.key, marker, new Cartesian3(...target.positionEcefM!), Date.parse(frame.epochUtc),
+          Color.fromCssColorString(target.look!.aboveThreshold ? '#88E5A5' : '#8490A2'));
         if (marker.label) marker.label.fillColor = new ConstantProperty(target.look!.aboveThreshold ? Color.fromCssColorString('#88E5A5') : color.withAlpha(0.7));
       }
       observerLayer.setOrbitPositions(activeBounds);

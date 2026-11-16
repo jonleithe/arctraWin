@@ -64,3 +64,5 @@ the C++ CTest suite covers exact tabulated epochs and coverage/identity boundari
 CPF predictions are not spacecraft telemetry. Arctra's supported passive,
 Earth-orbiting, common-epoch frame-0 subset, UTC/leap-second limitations, and
 pending independent operational accuracy validation still apply.
+
+Satellite markers use a small illustrative two-panel satellite icon. Their colour retains the configured elevation status. A short arrow shows movement relative to the Earth-fixed globe, derived from consecutive fresh CPF positions; it appears after the second live update and resets after a gap. Recorded previews use the first two supplied CPF samples. Arrow length is a display aid, not a speed scale, and the icon does not depict actual spacecraft attitude or construction.
