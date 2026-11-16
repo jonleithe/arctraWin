@@ -1,0 +1,32 @@
+# Visual Studio and .NET
+.vs/
+bin/
+obj/
+*.user
+*.suo
+
+# CMake and native build output
+build/
+CMakeUserPresets.json
+
+# JavaScript/TypeScript
+node_modules/
+dist/
+.vite/
+
+# Windows packaging
+AppPackages/
+*.msix
+*.msixbundle
+
+# Local prediction data and secrets
+.arctra-cache/
+local-data/
+.env
+.env.*
+
+# Editors and operating systems
+.idea/
+.vscode/
+Thumbs.db
+.DS_Store
