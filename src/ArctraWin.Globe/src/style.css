@@ -1,0 +1,7 @@
+html, body, #globe { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #070d16; }
+.cesium-viewer-bottom { padding: 4px 8px; background: #0c1420b3; }
+#trajectory-info { position: absolute; top: 22px; left: 22px; max-width: calc(100% - 76px); padding: 14px 16px; background: #101d2bdd; border: 1px solid #2a3b4d; color: #dbe8f5; font: 12px/1.7 system-ui; pointer-events: none; border-radius: 8px; box-shadow: 0 8px 28px #0003; }
+#trajectory-info strong { display: block; color: #f1d2a0; font-size: 12px; font-weight: 600; letter-spacing: .25px; }
+.snapshot-period { display: block; margin-top: 5px; color: #bccbdc; }
+.snapshot-caption { display: block; margin-top: 4px; color: #7e96b1; font-size: 11px; }
+#error { position: absolute; inset: 30% 15% auto; padding: 24px; background: #182536; color: #fff; font: 16px/1.6 system-ui; border: 1px solid #54718d; border-radius: 8px; }

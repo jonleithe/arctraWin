@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ArctraWin.App/ArctraWin.App.csproj" />
+  </Folder>
+</Solution>

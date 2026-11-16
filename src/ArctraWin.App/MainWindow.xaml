@@ -1,0 +1,116 @@
+<Window x:Class="ArctraWin.App.MainWindow"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:catalog="using:ArctraWin.App.Catalog"
+ xmlns:observer="using:ArctraWin.App.Observer"
+ xmlns:controls="using:Microsoft.UI.Xaml.Controls" Title="ArctraWin">
+ <Grid Background="#0C1420" RequestedTheme="Dark">
+  <Grid.RowDefinitions><RowDefinition Height="64"/><RowDefinition Height="*"/><RowDefinition Height="36"/></Grid.RowDefinitions>
+  <Grid Padding="24,0" BorderBrush="#263548" BorderThickness="0,0,0,1">
+   <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+    <TextBlock Text="ARCTRA" FontSize="23" FontWeight="SemiBold" CharacterSpacing="160"/>
+    <TextBlock Text="/  EARTH VIEW" Foreground="#86A2BE" VerticalAlignment="Center" CharacterSpacing="120"/>
+   </StackPanel>
+   <Border HorizontalAlignment="Right" VerticalAlignment="Center" CornerRadius="12" Background="#183734" Padding="12,5">
+    <TextBlock x:Name="LiveBadge" Text="LIVE CPF · STARTING" FontSize="11" Foreground="#87DBBC" CharacterSpacing="100"/>
+   </Border>
+  </Grid>
+  <Grid Grid.Row="1">
+   <Grid.ColumnDefinitions><ColumnDefinition Width="370"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+   <Grid Padding="20" RowSpacing="12" BorderBrush="#263548" BorderThickness="0,0,1,0">
+    <Grid.RowDefinitions>
+     <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/>
+     <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+    <StackPanel Spacing="8">
+     <TextBlock Text="Satellites" FontSize="27" FontWeight="SemiBold"/>
+     <TextBlock x:Name="CatalogSourceText" Foreground="#91A8BF" FontSize="12"/>
+     <TextBox x:Name="TargetSearch" PlaceholderText="Name, CPF key, NORAD or ILRS ID" TextChanged="TargetSearch_TextChanged" AutomationProperties.Name="Search satellites"/>
+     <TextBlock x:Name="CatalogCountText" Foreground="#91A8BF" FontSize="12" TextWrapping="Wrap"/>
+     <ComboBox x:Name="ObserverSelector" Header="Observer" HorizontalAlignment="Stretch" SelectionChanged="ObserverSelector_SelectionChanged" AutomationProperties.Name="Observer location">
+      <ComboBox.ItemTemplate><DataTemplate x:DataType="observer:ObserverProfile"><TextBlock Text="{x:Bind DisplayName}" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{x:Bind DisplayName}"/></DataTemplate></ComboBox.ItemTemplate>
+     </ComboBox>
+    </StackPanel>
+    <controls:InfoBar x:Name="CatalogError" Grid.Row="1" Severity="Warning" IsOpen="False" IsClosable="True"/>
+    <Grid Grid.Row="2">
+     <ListView x:Name="TargetList" SelectionMode="None" IsItemClickEnabled="False" HorizontalContentAlignment="Stretch">
+      <ListView.ItemTemplate>
+       <DataTemplate x:DataType="catalog:SatelliteTarget">
+        <CheckBox IsChecked="{x:Bind IsSelected, Mode=TwoWay}" IsEnabled="{x:Bind IsSelectable}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="0,7" ToolTipService.ToolTip="{x:Bind Details, Mode=OneWay}" AutomationProperties.Name="{x:Bind Name}">
+         <StackPanel Spacing="3" Margin="10,0,0,0">
+          <TextBlock Text="{x:Bind Name}" FontWeight="SemiBold"/>
+          <TextBlock Text="{x:Bind Identifiers}" Foreground="#91A8BF" FontSize="11"/>
+          <TextBlock Text="{x:Bind Availability, Mode=OneWay}" Foreground="#7694AF" FontSize="11"/>
+         </StackPanel>
+        </CheckBox>
+       </DataTemplate>
+      </ListView.ItemTemplate>
+     </ListView>
+     <TextBlock x:Name="NoTargetsText" Text="No matching targets." Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#91A8BF"/>
+    </Grid>
+    <Border Grid.Row="3" Background="#131F2E" CornerRadius="8" Padding="14">
+     <StackPanel Spacing="8">
+      <Grid><TextBlock x:Name="SelectedCountText" Text="0 selected" FontWeight="SemiBold" VerticalAlignment="Center"/>
+       <Button x:Name="ClearTargetsButton" Content="Clear" HorizontalAlignment="Right" Click="ClearTargets_Click" IsEnabled="False"/></Grid>
+      <ScrollViewer MaxHeight="65"><TextBlock x:Name="SelectedTargetsText" Text="Choose targets above." TextWrapping="Wrap" Foreground="#9FB5C9" FontSize="12"/></ScrollViewer>
+      <ScrollViewer MaxHeight="95"><TextBlock x:Name="PreviewStatusText" Text="Loading live CPF predictions…" TextWrapping="Wrap" Foreground="#9FB5C9" FontSize="12"/></ScrollViewer>
+      <Button x:Name="PreviewButton" Content="Frame selected orbits" Click="PreviewButton_Click" HorizontalAlignment="Stretch" IsEnabled="False"/>
+      <CheckBox x:Name="ReferenceOrbitToggle" Content="Closed reference orbits" IsChecked="True" Checked="ReferenceOrbitToggle_Changed" Unchecked="ReferenceOrbitToggle_Changed" IsEnabled="False"/>
+      <Grid ColumnSpacing="8">
+       <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+       <CheckBox x:Name="TrajectoryToggle" Content="CPF trails" IsChecked="False" Checked="TrajectoryToggle_Changed" Unchecked="TrajectoryToggle_Changed" IsEnabled="False"/>
+       <Button x:Name="FrameTrajectoryButton" Grid.Column="1" Content="Frame path" Click="FrameTrajectory_Click" IsEnabled="False"/>
+      </Grid>
+      <TextBlock Text="Positions update each second from CPF predictions, not telemetry. Closed loops are approximate reference ellipses; CPF trails remain coverage-bounded." TextWrapping="Wrap" Foreground="#7694AF" FontSize="11"/>
+     </StackPanel>
+    </Border>
+    <controls:Expander x:Name="ObserverExpander" Grid.Row="4" Header="Observer and tangent plane" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+     <ScrollViewer MaxHeight="250">
+      <StackPanel Spacing="10">
+       <Grid ColumnSpacing="8" RowSpacing="8">
+        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <Button x:Name="NewObserverButton" Content="New…" Click="NewObserver_Click" HorizontalAlignment="Stretch"/>
+        <Button x:Name="EditObserverButton" Grid.Column="1" Content="Edit…" Click="EditObserver_Click" HorizontalAlignment="Stretch"/>
+        <Button x:Name="ImportObserverButton" Grid.Row="1" Content="Import INI…" Click="ImportObserver_Click" HorizontalAlignment="Stretch"/>
+        <Button x:Name="SaveObserverAsButton" Grid.Row="1" Grid.Column="1" Content="Save as…" Click="SaveObserverAs_Click" HorizontalAlignment="Stretch"/>
+        <Button x:Name="ReloadObserversButton" Grid.Row="2" Content="Reload files" Click="ReloadObservers_Click" HorizontalAlignment="Stretch"/>
+        <Button x:Name="OpenObserverFolderButton" Grid.Row="2" Grid.Column="1" Content="Open folder" Click="OpenObserverFolder_Click" HorizontalAlignment="Stretch"/>
+       </Grid>
+       <TextBlock x:Name="ObserverFeedback" Foreground="#91A8BF" FontSize="12" TextWrapping="Wrap"/>
+       <CheckBox x:Name="ObserverPlaneToggle" Content="Show tangent plane and ENU axes" IsChecked="True" Checked="ObserverPlane_Changed" Unchecked="ObserverPlane_Changed"/>
+       <CheckBox x:Name="ObserverConeToggle" Content="Show minimum-elevation cone" IsChecked="True" Checked="ObserverCone_Changed" Unchecked="ObserverCone_Changed"/>
+       <Button x:Name="ObserverSideButton" Content="View plane from the side" HorizontalAlignment="Stretch" Click="ObserverSide_Click" IsEnabled="False"/>
+       <Button x:Name="ObserverButton" Content="View observer from above" HorizontalAlignment="Stretch" Click="ObserverView_Click" IsEnabled="False"/>
+       <Button x:Name="EarthButton" Content="Global view" HorizontalAlignment="Stretch" Click="GlobalView_Click" IsEnabled="False"/>
+       <ToggleSwitch x:Name="GridToggle" Header="Latitude / longitude grid" Toggled="GridToggle_Toggled" IsEnabled="False"/>
+       <TextBlock Text="Plane: ideal 0° geometric horizon, sized automatically beyond the farthest loaded selected orbit. Default coordinates are approximate." TextWrapping="Wrap" Foreground="#91A8BF" FontSize="12"/>
+       <TextBlock Text="Drag to rotate · Scroll to zoom&#x0a;Right-drag to zoom · Middle-drag to tilt" TextWrapping="Wrap" Foreground="#91A8BF" FontSize="12"/>
+      </StackPanel>
+     </ScrollViewer>
+    </controls:Expander>
+   </Grid>
+   <Grid Grid.Column="1">
+    <controls:WebView2 x:Name="GlobeView" Loaded="GlobeView_Loaded"/>
+    <Border x:Name="LoadingPanel" Background="#182536" Padding="24" CornerRadius="8" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="460">
+     <StackPanel Spacing="12"><ProgressRing x:Name="LoadingRing" IsActive="True"/><TextBlock x:Name="LoadingText" Text="Preparing the globe…" TextWrapping="Wrap" HorizontalAlignment="Center"/></StackPanel>
+    </Border>
+   </Grid>
+  </Grid>
+  <TextBlock x:Name="StatusText" Grid.Row="2" Text="Starting globe renderer" Margin="24,0" VerticalAlignment="Center" Foreground="#91A8BF" FontSize="12"/>
+  <controls:ContentDialog x:Name="ObserverDialog" Title="Observer location" PrimaryButtonText="Apply" CloseButtonText="Cancel" DefaultButton="Primary" PrimaryButtonClick="ApplyObserver_Click">
+   <ScrollViewer MaxHeight="500">
+    <StackPanel Spacing="12" MinWidth="340">
+     <TextBox x:Name="ObserverNameInput" Header="Observer name" MaxLength="80"/>
+     <controls:NumberBox x:Name="LatitudeInput" Header="Latitude (°, north +)" SmallChange="0.1" SpinButtonPlacementMode="Compact"/>
+     <controls:NumberBox x:Name="LongitudeInput" Header="Longitude (°, east +)" SmallChange="0.1" SpinButtonPlacementMode="Compact"/>
+     <controls:NumberBox x:Name="HeightInput" Header="WGS 84 ellipsoidal height (m)" SmallChange="10" SpinButtonPlacementMode="Compact"/>
+     <controls:NumberBox x:Name="MinElevationInput" Header="Minimum elevation (°)" SmallChange="0.5" SpinButtonPlacementMode="Compact"/>
+     <controls:NumberBox x:Name="PlaneWidthInput" Header="Fallback plane width (km, no orbit data)" SmallChange="500" SpinButtonPlacementMode="Compact"/>
+     <TextBlock Text="Use decimal degrees. Height is above the WGS 84 ellipsoid, not mean sea level." TextWrapping="Wrap" Foreground="#91A8BF" FontSize="12"/>
+     <TextBlock x:Name="ObserverValidationText" TextWrapping="Wrap" Foreground="#F0B9A5" FontSize="12"/>
+    </StackPanel>
+   </ScrollViewer>
+  </controls:ContentDialog>
+ </Grid>
+</Window>

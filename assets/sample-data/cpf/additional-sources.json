@@ -1,0 +1,20 @@
+[
+  {
+    "key": "lageos2",
+    "filename": "lageos2_cpf_261115_32001.sgf",
+    "sourceUrl": "https://edc.dgfi.tum.de/pub/slr/cpf_predicts_v2/current/lageos2_cpf_261115_32001.sgf",
+    "retrievedAtUtc": "2026-11-16T09:33:01Z"
+  },
+  {
+    "key": "lares",
+    "filename": "lares_cpf_261115_32001.sgf",
+    "sourceUrl": "https://edc.dgfi.tum.de/pub/slr/cpf_predicts_v2/current/lares_cpf_261115_32001.sgf",
+    "retrievedAtUtc": "2026-11-16T09:33:01Z"
+  },
+  {
+    "key": "lares2",
+    "filename": "lares2_cpf_261115_32001.sgf",
+    "sourceUrl": "https://edc.dgfi.tum.de/pub/slr/cpf_predicts_v2/current/lares2_cpf_261115_32001.sgf",
+    "retrievedAtUtc": "2026-11-16T09:33:02Z"
+  }
+]

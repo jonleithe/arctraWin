@@ -27,7 +27,147 @@ testable prediction engine and command-line engineering tool.
 - Git remote: `git@github-jonleithe:jonleithe/arctraWin.git`
 - Default branch: `master`, tracking `origin/master`
 - Initial scaffold commit: `69b1d2c` (`Initial commit`)
-- No application implementation has started yet.
+- The first native GUI and offline Cesium globe are implemented. Build/run
+  instructions are in README.md. Prediction snapshots and backend integration
+  are not yet implemented.
+
+## Windows GUI checkpoint (2026-11-16)
+
+- Current Windows checkout: `C:\Users\jole\projects\arctraWin`.
+- Native shell: C# / WinUI 3, .NET 11, Windows App SDK 2.6.5, x64,
+  unpackaged with self-contained .NET and Windows App SDK runtimes.
+- Globe: Cesium 1.147.0, TypeScript 7.0.2, Vite 8.3.8, pinned with npm lockfile.
+- Bundled Natural Earth imagery and ellipsoid terrain; no Ion token required.
+- WebView2 maps bundled assets to `https://globe.arctrawin.local`.
+- Native controls send camera/grid commands; renderer reports ready/errors.
+- Approximate Ny-Ålesund marker only; no invented satellite positions.
+- Build: `./scripts/build.ps1`. Launch: `./scripts/run.ps1`.
+- Rendering smoke test: `npm.cmd test` in `src/ArctraWin.Globe` after building.
+- Next: versioned snapshot schema and authoritative Arctra sample data.
+
+### Target selection checkpoint
+
+- The native sidebar now loads the same 144-entry EDC catalog snapshot as
+  Arctra, taken on 2026-11-13. Source commit and provenance are recorded in
+  `assets/catalog/README.md`; the CSV is bundled with the app.
+- Search follows Arctra's case/separator normalization, numeric ID handling,
+  and fuzzy subsequence fallback. Selection survives filtering.
+- 138 Earth-orbiting CPF candidates can be selected; six lunar entries are
+  visible but disabled. Catalog membership does not establish CPF availability.
+- Selected CPF keys persist in `%LOCALAPPDATA%/ArctraWin/selected-targets-v1.json`.
+- The globe does not receive synthetic positions from catalog selection.
+- Pure C# checks: `dotnet run --project tests/App.Tests/ArctraWin.Catalog.Tests.csproj`.
+- Next: acquire and validate CPF through Arctra, expose the versioned snapshot,
+  and display selected targets only within valid prediction coverage.
+
+### CPF trajectory checkpoint
+
+- Downloaded the complete real EDC/DGF `lageos1_cpf_261115_31902.dgf`;
+  source and retrieval time are in `assets/sample-data/cpf/source.json`.
+- A pinned, unchanged subset of Arctra C++ code builds on Windows with MSVC
+  through `src/ArctraWin.Backend/CMakeLists.txt`. It excludes the POSIX terminal
+  and network-acquisition code. Pin details are in `vendor/arctra/README.md`.
+- The exporter validates identity/frame, enforces CPF intended AND record
+  coverage, rejects gaps and leap flags, and samples Arctra interpolation.
+- `scripts/export-sample.ps1` builds/tests the exporter and creates 481 samples
+  over 2026-11-16 09:00–13:00 UTC at 30-second spacing.
+- The narrower `trajectory-snapshot-v1.schema.json` is a recorded single-target
+  preview contract, not the future observer/pass/live-state snapshot.
+- Native selection gates LAGEOS-1's data; its preview button also frames the
+  path. The globe validates the schema, coverage, ordering and metre units,
+  draws an unclamped Cartesian polyline, and never closes or extends it.
+- Native build, C++ boundary tests, catalog checks and three Playwright
+  contract/rendering tests passed. Full native UI visual check is also required
+  when changing deployment or WebView message handling.
+- Still pending: live acquisition/service, automatic refresh, additional target
+  snapshots, observer visibility and independent operational validation.
+
+### Rendering refinement
+
+- Removed the star-texture skybox and reduced ground-atmosphere washout.
+- Added camera-relative illustrative globe shading (not physical sunlight),
+  adjusted map contrast, and enabled FXAA.
+- Frame-path uses an oblique, viewport-aware camera fit; predictions are unchanged.
+- Simplified labels and preview timestamps, marked both supplied endpoints,
+  and improved checkbox/content spacing in the native target list.
+
+### Closed reference-orbit checkpoint
+
+- User clarified that selected satellites should show full closed loops.
+- Added separate, explicitly approximate two-body reference ellipses in C++,
+  derived from CPF positions and differentiated motion with nominal Earth
+  rotation. Upstream Arctra interpolation remains unchanged. Details and limits
+  are in `docs/decisions/0002-closed-reference-orbits.md`.
+- The snapshot schema accepts optional `referenceOrbit` with epoch-frozen axes
+  and 361 vertices; first/last match the CPF marker exactly. This geometry has
+  no prediction timestamps and never replaces the original CPF samples.
+- Downloaded additional SGF CPF files for LAGEOS-2, LARES, and LARES-2; source
+  URLs and retrieval timestamps are in `cpf/additional-sources.json`.
+- Export script now produces all four target fixtures at the same recorded
+  epoch. The app loads them by catalog identity and sends selected snapshots.
+- Closed loops are enabled by default, CPF trails separately disabled by
+  default. Targets are colour-coded and deselection removes their geometry.
+- Targets outside the four bundled fixtures remain selectable but explicitly
+  have no loaded data. Live acquisition is still pending.
+
+### Observer tangent-plane checkpoint
+
+- Added a native observer coordinate dialog: name, geodetic latitude/longitude,
+  WGS 84 ellipsoidal height, and plane display width. Apply validates all values;
+  Cancel leaves the active observer unchanged.
+- Coordinates, plane width and visibility persist in
+  `%LOCALAPPDATA%/ArctraWin/observer-v1.json`; malformed saved settings fall back
+  visibly to approximate Ny-Ålesund defaults.
+- Cesium renders a translucent Earth-fixed local East–North plane, border/grid,
+  E/N/Up axes and a relocated observer marker. Surface ENU determines orientation;
+  configured height only translates the geometry.
+- Top/side camera presets use the active observer and release their local
+  camera transform afterwards. Free globe rotation continues to work.
+- This is rendering geometry only. Authoritative look angles and satellite
+  visibility remain backend work; terrain/obstructions are intentionally omitted.
+- Details and controls are in `docs/observer-plane.md`.
+
+### Live tracking checkpoint
+
+- Default GUI mode now uses current CPF predictions rather than bundled recorded
+  JSON. Selected supported targets are acquired asynchronously from EDC.
+- A persistent `arctrawin-live.exe` worker exchanges version-1 JSON lines over
+  private stdin/stdout. It uses unchanged pinned Arctra CPF/coordinates code,
+  caches parsed files, checks identities and coverage, and computes current
+  positions and observer azimuth/elevation/range once per second.
+- C# owns the serialized HTTP acquisition queue, provider-issue selection,
+  validated temporary-file promotion, source/retrieval sidecars and cache.
+  Refresh is hourly or thirty minutes before expiry, with five-minute retries.
+  Refresh failure retains valid loaded data until usable coverage ends.
+- Live positions and observer look angles update every second. Approximate
+  reference loops and forward CPF trails refresh each minute or on file/selection
+  changes. Trails never extend beyond CPF coverage.
+- Rows display CPF readiness and current elevation; tooltips retain provenance,
+  coverage and geometry. Green markers mean above the ideal 0° horizon.
+- Renderer uses `live-state-v1.schema.json` plus freshness/coverage checks, hides
+  interrupted state after about 3.5 seconds, and does not extrapolate. Selection
+  revisions discard late results; closing the window stops the owned worker.
+- Normal build now builds/tests and deploys the static-runtime C++ worker.
+- Verified real EDC acquisition for LAGEOS-1/2 and LARES/2, consecutive advancing
+  UTC seconds, observer changes, partial deselection and clearing selection.
+  Details: `docs/live-tracking.md`, transport ADR 0003, and `--live-integration`
+  in the C# check executable.
+- Recorded fixtures remain test/development artifacts. Remaining work includes
+  pass countdowns, minimum-elevation configuration, independent operational
+  accuracy comparison and packaging/install validation.
+
+### Automatic horizontal-plane extent
+
+- The observer plane now fits the horizontal projection of selected loaded
+  reference orbits and CPF trails, with an 8% margin rounded upward to 100 km.
+- Automatic dimensions are not restricted by the old 40000 km manual limit.
+  Removing distant targets shrinks the plane; changing observer coordinates
+  recomputes bounds in the new local frame. Live failures/expired targets do not
+  retain an obsolete large-plane extent.
+- The persisted `planeWidthKm` value remains compatible and acts as the fallback
+  when no target data is loaded. The editor label reflects that role.
+- Camera presets use the actual rendered width. Sizing does not change
+  orientation, satellite positions, prediction calculations or visibility.
 
 The project is deliberately an independent Git repository beside Arctra. It
 can later be opened with Arctra in a VS Code multi-root workspace, but that
@@ -62,10 +202,9 @@ a comparable ellipsoidal globe, camera, labels, and trajectories directly in
 DirectX would add substantial rendering work without improving the prediction
 mathematics.
 
-The shell language has not been finalized. A C# WinUI 3 shell is likely the
-most direct route, while C++/WinRT would keep more of the application in C++ at
-the cost of additional UI complexity. This choice should be recorded as an
-architecture decision before implementation.
+The selected stack is C# / WinUI 3 for the native shell, CesiumJS with
+TypeScript/JavaScript in WebView2 for globe rendering, and C++ for the Arctra
+backend. See [the accepted application stack decision](docs/decisions/0001-application-stack.md).
 
 ## Authority and component boundaries
 
@@ -213,7 +352,7 @@ source file when work starts so Git can track them.
 
 ### Milestone A — offline visual proof
 
-- Finalize the shell language and record the decision.
+- Use the accepted C# / WinUI 3 shell decision.
 - Create the WinUI 3 application and WebView2 host.
 - Create the CesiumJS/TypeScript globe application.
 - Load a checked-in, clearly labelled JSON snapshot.
@@ -290,7 +429,8 @@ Pin versions through the appropriate lock files once selected.
 
 Before substantial implementation, decide and document:
 
-1. C# WinUI 3 or C++/WinRT for the native shell.
+1. Exact .NET, Windows App SDK, and development toolchain versions for the
+   accepted C# / WinUI 3 shell.
 2. Initial local-service transport: named pipes, HTTP/WebSocket, or another
    narrowly scoped local mechanism.
 3. Whether Arctra is consumed as a built library, selected shared sources, or
@@ -303,8 +443,8 @@ Before substantial implementation, decide and document:
 
 ## Immediate next steps
 
-1. Add architecture decision records for the shell language and backend
-   transport.
+1. Verify and install development prerequisites for the accepted stack, then
+   record the backend transport decision before live integration.
 2. Define `prediction-snapshot-v1.schema.json` before building UI-specific
    model classes.
 3. Prepare one small, reproducible sample snapshot from checked-in Arctra CPF
@@ -317,3 +457,11 @@ Avoid beginning with packaging, a DLL ABI, provider downloading in the UI, or
 advanced visibility overlays. The smallest valuable proof is a native Windows
 window containing a controllable globe that faithfully renders a versioned,
 coverage-bounded Arctra snapshot.
+
+## Observer profiles and minimum elevation (2026-11-16)
+
+Implemented one Arctra-compatible [observatory] INI per station in LocalAppData/ArctraWin/Observers, with native station selector, New/Edit/Import/Save as/Reload/Open folder controls. Active filename persists in observer-profile.json; existing observer-v1.json coordinates migrate without changing their previous zero-degree cutoff. Fresh nyal.ini uses the approximate Arctra example and 12.5-degree minimum. Display preferences remain global.
+
+Horizontal plane stays at zero degrees. A separate translucent ENU cone displays the minimum elevation and extends beyond selected geometry. C++ live frames now identify the observer/minimum and supply inclusive aboveThreshold alongside unchanged aboveHorizon. Host and renderer discard prior-station frames. Green current markers meet the limit; others are muted. Station switches retain the camera.
+
+Validation: native Debug build has zero warnings/errors; pure C# profile/migration checks pass; CTest passes including equality boundary; real CPF integration passes observer and threshold changes; eleven Playwright tests pass. Native smoke verified 6/6 live CPF targets and advancing UTC after profile migration. See docs/observer-plane.md for format and workflow.
